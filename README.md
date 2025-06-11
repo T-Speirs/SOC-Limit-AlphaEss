@@ -3,6 +3,15 @@
 Dieses Repository enthält ein **Home Assistant Package**, das den Export (Einspeisung)
 deiner AlphaESS‑Batterie begrenzt, sobald ein frei wählbarer SoC‑Schwellenwert
 erreicht ist.
+> **Hinweis**  
+> Dieses Package baut auf den Sensor‑Entitäten auf, die vom
+> **AlphaESS‑Home‑Assistant‑Script** aus  
+> <https://projects.hillviewlodge.ie/alphaess/>  
+> erzeugt werden.  
+>
+> Wenn du ein anderes Skript oder eine eigene Modbus‑Einbindung verwendest,
+> **passe die im Package referenzierten Sensor‑ und Helper‑Namen entsprechend an**,
+> damit die Automation korrekt funktioniert.
 
 ## Dateien
 
@@ -50,3 +59,33 @@ git push -u origin main
 ```
 
 **Fertig!** Dein Package ist jetzt öffentlich verfügbar.
+
+## Dashboard / Lovelace‑Karte
+
+```
+type: entities
+title: ⚡️ AlphaESS - Batteriebegrenzung
+show_header_toggle: false
+entities:
+  - type: section
+    label: 🔋 Batterie
+  - entity: sensor.alphaess_power_battery
+    name: Lade / Entlade­leistung
+    icon: mdi:battery-charging
+  - entity: sensor.alphaess_soc_battery
+    name: Ladestand (SoC)
+    icon: mdi:battery-80
+  - entity: sensor.alphaess_excess_power
+    name: PV-Überschuss (W)
+    icon: mdi:flash
+  - entity: sensor.alphaess_dispatch_mode
+  - type: section
+    label: ⚙️ Steuerung
+  - entity: input_number.alphaess_helper_soc_limit
+    name: SoC-Grenze (Slider)
+    icon: mdi:slider-variant
+  - entity: input_boolean.alphaess_helper_export_enable
+    name: SoC-Begrenzen
+    icon: mdi:power-plug
+  - type: section
+```
