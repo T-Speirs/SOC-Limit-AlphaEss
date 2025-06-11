@@ -1,0 +1,114 @@
+# Inputs zur Regelung des Batteriestands
+input_number:
+  alphaess_helper_soc_limit:
+    name: AlphaESS SoC-Grenze
+    min: 50          # unteres Ende (beliebig anpassen)
+    max: 100         # oberes Ende
+    step: 1
+    unit_of_measurement: "%"
+    mode: slider
+    icon: mdi:battery-charging-80
+
+input_boolean:
+  alphaess_helper_export_enable:
+    name: "AlphaESS Export freigeben"
+    icon: mdi:power-plug
+    initial: off
+
+# Automation
+automation:
+  - id: alphaess_limit_battery_soc
+    alias: Batterie Einspeisung limitieren
+    description: Aktiviert Export, wenn PV-Produktion größer als Hausverbrauch ist
+
+    trigger:
+      - platform: time_pattern
+        seconds: "/10"
+
+    condition:
+      - alias: Batterie-Button eingeschaltet
+        condition: state
+        entity_id: input_boolean.alphaess_helper_export_enable
+        state: "on"
+
+      - alias: PV größer Hausverbrauch
+        condition: template
+        value_template: >
+          {% set pv = states('sensor.alphaess_current_pv_production') | float(0) %}
+          {% set load = states('sensor.alphaess_current_house_load') | float(0) %}
+          {{ pv > load }}
+
+      - alias: "SoC max Limit erreicht"
+        condition: numeric_state
+        entity_id: sensor.alphaess_soc_battery
+        above: input_number.alphaess_helper_soc_limit   # dynamische Schwelle
+
+      - alias: PV-Produktion vorhanden
+        condition: numeric_state
+        entity_id: sensor.alphaess_current_pv_production
+        above: 0
+
+    action:
+      - choose:
+          - conditions:
+              - condition: or
+                conditions:
+                  - condition: not
+                    conditions:
+                      - condition: state
+                        entity_id: sensor.alphaess_dispatch_mode
+                        state: "2"
+                  - condition: template
+                    value_template: "{{ states('sensor.alphaess_dispatch_time')|int(0) < 15 }}"
+            sequence:
+              # Hilfs-Boolean setzen
+              - service: input_boolean.turn_on
+                target:
+                  entity_id: input_boolean.alphaess_excess_export_status
+
+              # --- Modbus-Befehle (unverändert) ---
+              - action: modbus.write_register
+                data:
+                  hub: modbuspvsystem
+                  slave: 85
+                  address: 2176
+                  value:
+                    - 1
+
+              - action: modbus.write_register
+                data:
+                  hub: modbuspvsystem
+                  slave: 85
+                  address: 2177
+                  value:
+                    - 0
+                    - 32000
+
+              - action: modbus.write_register
+                data:
+                  hub: modbuspvsystem
+                  slave: 85
+                  address: 2182
+                  value:
+                    - 250
+
+              - action: modbus.write_register
+                data:
+                  hub: modbuspvsystem
+                  slave: 85
+                  address: 2183
+                  value:
+                    - 0
+                    - 11
+
+              - action: modbus.write_register
+                data:
+                  hub: modbuspvsystem
+                  slave: 85
+                  address: 2181
+                  value:
+                    - 2
+              # ------------------------------------
+
+    mode: single
+    max_exceeded: silent   # Log-Spam unterdrücken
