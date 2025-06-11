@@ -27,8 +27,6 @@ alphaess-ha-addon/
   Enthält *Input Helpers* und die Automation zum Limitieren der Batterie‑Einspeisung.
 - **README.md**  
   Diese Anleitung.
-- **LICENSE**  
-  MIT-Lizenz.
 
 ## Installation
 
