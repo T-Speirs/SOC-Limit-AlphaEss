@@ -12,6 +12,22 @@ erreicht ist.
 > Wenn du ein anderes Skript oder eine eigene Modbus‑Einbindung verwendest,
 > **passe die im Package referenzierten Sensor‑ und Helper‑Namen entsprechend an**,
 > damit die Automation korrekt funktioniert.
+> 
+## Motivation
+
+Der AlphaESS-Wechselrichter bietet von Haus aus keine Möglichkeit, Lade- und Entladestrom **dynamisch** anhand des aktuellen SoC *und* der momentanen PV-Leistung zu regeln. Die Folgen waren bei uns deutlich spürbar:
+
+* Die Batterie verharrte oft bei 100 % Ladestand – unnötiger Stress und beschleunigter Verschleiß.  
+* Im Home-Assistant-Dashboard fehlten eindeutige Schalt- und Anzeige­elemente, um schnell eingreifen zu können.
+
+Dieses Add-on schließt genau diese Lücke:
+
+* Mit einem **Slider** setzt du ein SoC-Limit, mit einem **Toggle** aktivierst oder deaktivierst du die Regelung sofort.  
+* Eine Automation prüft alle 10 s PV-Ertrag und Hausverbrauch und stoppt das Laden, sobald der Ziel-SoC erreicht ist.  
+* Alle Befehle werden lokal über Modbus-Register ausgeführt – **keine Cloud, keine Verzögerungen**.  
+* Eine Lovelace-Karte zeigt SoC, PV-Überschuss und Exportstatus auf einen Blick.
+
+**Kurz gesagt:** Das Add-on optimiert deinen Eigenverbrauch, schont die Batterie, reduziert manuelles Eingreifen und integriert sich nahtlos in jedes Home-Assistant-Setup.
 
 ## Dateien
 
