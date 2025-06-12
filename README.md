@@ -65,7 +65,7 @@ alphaess-ha-addon/
 3. **Konfiguration prüfen** → **Neustart**.
 4. Lege in deinem Dashboard eine Entities‑Card an und binde dort die Helper
    (`input_number.alphaess_helper_soc_limit` und
-   `input_boolean.alphaess_helper_export_enable`) ein. Siehe nachfolgend:
+   `input_boolean.alphaess_helper_soc_limit_enable`) ein. Siehe nachfolgend:
 
 ## Dashboard / Lovelace‑Karte
 
@@ -104,11 +104,11 @@ entities:
 1. **Grenzwert setzen** – Mit dem Slider (`input_number.alphaess_helper_soc_limit`) legst du fest, bis zu welchem
 *State of Charge* (SoC) der Akku befüllt werden darf.
 
-2. **Automation aktivieren** – Schalte `input_boolean.alphaess_helper_export_enable` ein.  
+2. **Automation aktivieren** – Schalte `input_boolean.alphaess_helper_soc_limit_enable` ein.  
    Ab jetzt prüft die Automation alle 10 Sekunden:
    - PV‑Produktion > Hausverbrauch  
    - Batterie‑SoC ≥ eingestellter Grenzwert  
-   - SOC-Limit im Dashboard aktiviert - `input_boolean.alphaess_helper_export_enable`
+   - SOC-Limit im Dashboard aktiviert - `input_boolean.alphaess_helper_soc_limit_enable`
 
 3. **Modbus‑Befehle** – Wenn alle Bedingungen erfüllt sind, werden die in der Datei hinterlegten Modbus‑Register
 beschrieben. Dadurch wird "Dispatch Mode 2" jeweils aktiviert oder deaktiviert, welche das Laden und Beladen der
