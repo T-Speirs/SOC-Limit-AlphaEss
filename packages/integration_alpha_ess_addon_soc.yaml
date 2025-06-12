@@ -15,6 +15,21 @@ input_boolean:
     icon: mdi:power-plug
     initial: off
 
+# Lesbare Interpretation des Dispatch Mode für das Dashboard    
+template:
+  - sensor:
+      - name: "Batteriemodus"
+        unique_id: alphaess_dispatch_mode_translation_soc
+        state: >
+          {% set mode = states('sensor.alphaess_dispatch_mode') | int %}
+          {% if mode == 0 %}
+            Laden/Entladen freigegeben
+          {% elif mode == 2 %}
+            Laden/Entladen gestoppt
+          {% else %}
+            {{ states('sensor.alphaess_dispatch_mode') }}        # oder 'Unbekannt'
+          {% endif %}
+
 # Automation
 automation:
   - id: alphaess_limit_battery_soc
