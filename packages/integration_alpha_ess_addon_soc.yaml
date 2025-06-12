@@ -10,7 +10,7 @@ input_number:
     icon: mdi:battery-charging-80
 
 input_boolean:
-  alphaess_helper_export_enable:
+  alphaess_helper_soc_limit_enable:
     name: "AlphaESS Export freigeben"
     icon: mdi:power-plug
     initial: off
@@ -43,7 +43,7 @@ automation:
     condition:
       - alias: Batterie-Button eingeschaltet
         condition: state
-        entity_id: input_boolean.alphaess_helper_export_enable
+        entity_id: input_boolean.alphaess_helper_soc_limit_enable
         state: "on"
 
       - alias: PV größer Hausverbrauch
