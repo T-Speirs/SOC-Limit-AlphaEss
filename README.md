@@ -85,7 +85,7 @@ entities:
   - entity: sensor.alphaess_excess_power
     name: PV-Überschuss (W)
     icon: mdi:flash
-  - entity: sensor.alphaess_dispatch_mode_readable
+  - entity: sensor.batteriemodus
     name: Betriebsmodus
     icon: mdi:battery-outline
   - type: section
@@ -93,7 +93,7 @@ entities:
   - entity: input_number.alphaess_helper_soc_limit
     name: SoC-Grenze (Slider)
     icon: mdi:slider-variant
-  - entity: input_boolean.alphaess_helper_export_enable
+  - entity: input_boolean.alphaess_helper_soc_limit_enable
     name: SoC-Begrenzen
     icon: mdi:power-plug
   - type: section
