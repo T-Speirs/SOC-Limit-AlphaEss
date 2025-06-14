@@ -96,7 +96,6 @@ entities:
   - entity: input_boolean.alphaess_helper_soc_limit_enable
     name: SoC-Begrenzen
     icon: mdi:power-plug
-  - type: section
 ```
 
 ## Funktionsweise
