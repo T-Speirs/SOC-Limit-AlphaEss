@@ -61,6 +61,7 @@ alphaess-ha-addon/
    homeassistant:
      packages: !include_dir_named packages
    ```
+(Der Ordner aus Schritt 1 und die Anpassung in der configuration.yaml aus Schritt 2 sollte bereits vorhanden sein, wenn du *AlphaESS‑Home‑Assistant‑Script** von <https://projects.hillviewlodge.ie/alphaess/> verwendest)
 
 3. **Konfiguration prüfen** → **Neustart**.
 4. Lege in deinem Dashboard eine Entities‑Card an und binde dort die Helper
