@@ -25,12 +25,12 @@ Der AlphaESS-Wechselrichter bietet von Haus aus keine Möglichkeit, Lade- und En
 
 * verharrte die Batterie oft bei 100 % Ladestand – unnötiger Stress und beschleunigter Verschleiß.  
 * Im Home-Assistant-Dashboard fehlten eindeutige Schalt- und Anzeige­elemente, um schnell eingreifen zu können.
-* Die von AlphaEss angebotenen SoC-Grenzen beheben dieses Problem nicht, die Einspeisung der PV-Anlage grundsätzlich ignorieren - meine Vermutung ist, dass diese Funktion eher für das aktive be- und entladen im Zusammenhang mit der wirtschaftlichen maximierung für die Nutzung dynamischer Stromtarrife konzipiert wurde.
+* Die von AlphaEss angebotenen SoC-Grenzen beheben dieses Problem nicht, da sie die Einspeisung der PV-Anlage grundsätzlich ignorieren. Meine Vermutung ist, dass diese Funktion eher für das aktive Be- und Entladen im Zusammenhang mit der Maximierung der wirtschaftlichen Nutzung dynamischer Stromtarife konzipiert wurde. 
 
 Dieses Add-on schließt genau diese Lücke:
 
 * Mit einem **Slider** setzt du ein SoC-Limit, mit einem **Toggle** aktivierst oder deaktivierst du die Regelung sofort.  
-* Eine Automation prüft alle 10 Sekunden (grundsätzlich Anpassbar) den PV-Ertrag und Hausverbrauch und stoppt das Laden, sobald der Ziel-SoC erreicht ist.  
+* Die Automation prüft alle 10 Sekunden (grundsätzlich Anpassbar) den PV-Ertrag und Hausverbrauch und stoppt das Laden, sobald der Ziel-SoC erreicht ist.  
 * Alle Befehle werden lokal über Modbus-Register ausgeführt – **keine Cloud, keine Verzögerungen**.  
 * Eine Lovelace-Karte zeigt SoC, PV-Überschuss und Exportstatus auf einen Blick.
 
