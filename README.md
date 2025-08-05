@@ -1,7 +1,7 @@
 # AlphaESS Battery SOC Limit – Automation für Home Assistant Package
 
 Dieses Repository enthält eine Automation für **Home Assistant**, welche das Laden
-deiner AlphaESS‑Batterie begrenzt, sobald ein frei wählbarer SoC‑Schwellenwert
+deiner AlphaESS-Batterie begrenzt, sobald ein frei wählbarer SoC-Schwellenwert
 erreicht ist.
 
 Die Automation läuft auf folgender Hardware Konfiguration:
@@ -10,31 +10,51 @@ Die Automation läuft auf folgender Hardware Konfiguration:
 | ------------- | ------------- | ------------- | ------------- |
 | :white_check_mark: |  SMILE-G3-S5 |  SMILE-G3-BAT-3.8S  |
 
-Ich gehe davon aus, dass die Begrenzung des Batterielimits auch mit anderen AlphaESS-Systemen kompatibel ist, welche über die gleichen Dispatch Modi verfügen und über Modbus ansprechbar sind - **jedoch wurde dies von mir nicht getestet**.
+Ich gehe davon aus, dass die Begrenzung des Batterielimits auch mit anderen AlphaESS-Systemen kompatibel ist, welche über die gleichen Dispatch Modi verfügen und über Modbus ansprechbar sind – **jedoch wurde dies von mir nicht getestet**.
 
+---
 
 ## Hinweis zu Abhängigkeiten 
 
-Dieses Package baut auf den Sensor‑Entitäten auf, die vom **AlphaESS‑Home‑Assistant‑Script** <https://projects.hillviewlodge.ie/alphaess/> erzeugt werden und ist damit notwendiger Bestandteil für die funktionsweise dieser Automation. 
+Dieses Package baut auf den Sensor-Entitäten auf, die vom **AlphaESS-Home-Assistant-Script** <https://projects.hillviewlodge.ie/alphaess/> erzeugt werden und ist damit notwendiger Bestandteil für die Funktionsweise dieser Automation. 
 
-Solltest du nicht auf diesen Aufbauen möchten, **passe die im Package referenzierten Sensor‑ und Helfer‑Namen entsprechend an**, damit die Automation korrekt funktioniert.
+Solltest du nicht auf diesen aufbauen möchten, **passe die im Package referenzierten Sensor- und Helfer-Namen entsprechend an**, damit die Automation korrekt funktioniert.
+
+---
 
 ## Motivation
 
-Der AlphaESS-Wechselrichter bietet von Haus aus keine Möglichkeit, Lade- und Entladestrom **dynamisch** anhand des aktuellen SoC *und* der momentanen PV-Leistung zu regeln. In Folge dessen, 
+Der AlphaESS-Wechselrichter bietet von Haus aus keine Möglichkeit, Lade- und Entladestrom **dynamisch** anhand des aktuellen SoC *und* der momentanen PV-Leistung zu regeln. In Folge dessen:  
 
 * verharrte die Batterie oft bei 100 % Ladestand – unnötiger Stress und beschleunigter Verschleiß.  
-* Im Home-Assistant-Dashboard fehlten eindeutige Schalt- und Anzeige­elemente, um schnell eingreifen zu können.
-* Die von AlphaEss angebotenen SoC-Grenzen beheben dieses Problem nicht, da sie die Einspeisung der PV-Anlage grundsätzlich ignorieren. Meine Vermutung ist, dass diese Funktion eher für das aktive Be- und Entladen im Zusammenhang mit der Maximierung der wirtschaftlichen Nutzung dynamischer Stromtarife konzipiert wurde. 
+* Im Home-Assistant-Dashboard fehlten eindeutige Schalt- und Anzeige­elemente, um schnell eingreifen zu können.  
+* Die von AlphaESS angebotenen SoC-Grenzen beheben dieses Problem nicht, da sie die Einspeisung der PV-Anlage grundsätzlich ignorieren. Meine Vermutung ist, dass diese Funktion eher für das aktive Be- und Entladen im Zusammenhang mit der Maximierung der wirtschaftlichen Nutzung dynamischer Stromtarife konzipiert wurde.  
 
 Dieses Add-on schließt genau diese Lücke:
 
 * Mit einem **Slider** setzt du ein SoC-Limit, mit einem **Toggle** aktivierst oder deaktivierst du die Regelung sofort.  
-* Die Automation prüft alle 10 Sekunden (grundsätzlich Anpassbar) den PV-Ertrag und Hausverbrauch und stoppt das Laden, sobald der Ziel-SoC erreicht ist.  
+* Die Automation prüft alle 10 Sekunden (grundsätzlich anpassbar) den PV-Ertrag und Hausverbrauch und stoppt das Laden, sobald der Ziel-SoC erreicht ist.  
 * Alle Befehle werden lokal über Modbus-Register ausgeführt – **keine Cloud, keine Verzögerungen**.  
 * Eine Lovelace-Karte zeigt SoC, PV-Überschuss und Exportstatus auf einen Blick.
 
 **Kurz gesagt:** Das Add-on optimiert deinen Eigenverbrauch, schont die Batterie, reduziert manuelles Eingreifen und integriert sich nahtlos in jedes Home-Assistant-Setup.
+
+---
+
+## Änderungen von Version 1 zu Version 2 (Schreibzyklen & Stabilität)
+
+Die ursprüngliche Version (v1) prüfte die Bedingungen und setzte den **Dispatch Mode** sehr häufig, sobald der SoC-Grenzwert überschritten wurde – auch dann, wenn er bereits aktiv war.  
+Das führte zu **unnötig vielen Modbus-Schreibvorgängen** auf die Register und damit zu potenzieller Buslast und instabilem Verhalten bei häufigerem Flattern der Bedingungen (z. B. durch wechselhaftes Wetter).
+
+**Die neue Version (v2)** speichert den Zeitpunkt der letzten DM2-Aktivierung (`input_datetime.alphaess_last_dm2_timestamp`) und prüft vor jedem Schreibvorgang, ob seitdem **mindestens 7100 Sekunden (~2 Stunden)** vergangen sind.  
+Nur wenn diese Zeit überschritten ist, wird erneut geschrieben oder die Laufzeit des DM2 verlängert.  
+Dadurch:
+
+- werden **Schreibzyklen drastisch reduziert**,  
+- die Buslast sinkt,  
+- und die Stabilität des Gesamtsystems steigt, besonders bei wechselnder PV-Leistung.
+
+---
 
 ## Dateien
 
@@ -47,13 +67,15 @@ alphaess-ha-addon/
 ```
 
 - **packages/integration_alpha_ess_addon_soc.yaml**  
-  Enthält *Input Helpers* und die Automation zum Limitieren der Batterie‑Einspeisung.
+  Enthält *Input Helpers* und die Automation zum Limitieren der Batterie-Einspeisung.
 - **README.md**  
   Diese Anleitung.
 
+---
+
 ## Installation
 
-1. Kopiere den Ordner `packages` in dein Home‑Assistant‑`config/`‑Verzeichnis (oder
+1. Kopiere den Ordner `packages` in dein Home-Assistant-`config/`-Verzeichnis (oder
    wohin du deine Packages einbindest).
 2. Stelle sicher, dass in deiner `configuration.yaml` der folgende Block vorhanden ist:
 
@@ -61,16 +83,18 @@ alphaess-ha-addon/
    homeassistant:
      packages: !include_dir_named packages
    ```
-(Der Ordner aus Schritt 1 und die Anpassung in der configuration.yaml aus Schritt 2 sollte bereits vorhanden sein, wenn du *AlphaESS‑Home‑Assistant‑Script** von <https://projects.hillviewlodge.ie/alphaess/> verwendest)
+   *(Der Ordner aus Schritt 1 und die Anpassung in der configuration.yaml aus Schritt 2 sollte bereits vorhanden sein, wenn du das **AlphaESS-Home-Assistant-Script** von <https://projects.hillviewlodge.ie/alphaess/> verwendest.)*
 
 3. **Konfiguration prüfen** → **Neustart**.
-4. Lege in deinem Dashboard eine Entities‑Card an und binde dort die Helper
+4. Lege in deinem Dashboard eine Entities-Card an und binde dort die Helper
    (`input_number.alphaess_helper_soc_limit` und
    `input_boolean.alphaess_helper_soc_limit_enable`) ein. Siehe nachfolgend:
 
-## Dashboard / Lovelace‑Karte
+---
 
-```
+## Dashboard / Lovelace-Karte
+
+```yaml
 type: entities
 title: ⚡️ AlphaESS - Batteriebegrenzung
 show_header_toggle: false
@@ -99,28 +123,29 @@ entities:
     icon: mdi:power-plug
 ```
 
+---
+
 ## Funktionsweise
 
-1. **Grenzwert setzen** – Mit dem Slider (`input_number.alphaess_helper_soc_limit`) legst du fest, bis zu welchem
-*State of Charge* (SoC) der Akku befüllt werden darf.
+1. **Grenzwert setzen** – Mit dem Slider (`input_number.alphaess_helper_soc_limit`) legst du fest, bis zu welchem *State of Charge* (SoC) der Akku befüllt werden darf.
 
 2. **Automation aktivieren** – Schalte `input_boolean.alphaess_helper_soc_limit_enable` ein.  
-   Ab jetzt prüft die Automation alle 10 Sekunden:
-   - PV‑Produktion > Hausverbrauch  
-   - Batterie‑SoC ≥ eingestellter Grenzwert  
-   - SOC-Limit im Dashboard aktiviert - `input_boolean.alphaess_helper_soc_limit_enable`
+   Ab jetzt prüft die Automation alle 10 Sekunden:
+   - PV-Produktion > Hausverbrauch  
+   - Batterie-SoC ≥ eingestellter Grenzwert  
+   - SOC-Limit im Dashboard aktiviert – `input_boolean.alphaess_helper_soc_limit_enable`
 
-3. **Modbus‑Befehle** – Wenn alle Bedingungen erfüllt sind, werden die in der Datei hinterlegten Modbus‑Register
-beschrieben. Dadurch wird "Dispatch Mode 2" jeweils aktiviert oder deaktiviert, welche das Laden und Beladen der
+3. **Modbus-Befehle** – Wenn alle Bedingungen erfüllt sind, werden die in der Datei hinterlegten Modbus-Register
+beschrieben. Dadurch wird "Dispatch Mode 2" jeweils aktiviert oder deaktiviert, welche das Laden und Entladen der
 Batterie stoppt oder freigibt. 
 
-## Warnhinweis & Haftungsausschluss
+---
 
-> **⚠️ Wichtig – Batteriepﬂege**  
+## Warnhinweis & Haftungsausschluss
+
+> **⚠️ Wichtig – Batteriepﬂege**  
 > Eine *dauerhafte* Begrenzung auf einen festen Ladezustand kann die Kalibrierung und Chemie des Speichers beeinträchtigen.  
-> 
-> Lade den Akku deshalb regelmäßig – vollständig (100 %), damit das BMS einen vollständigen Ladezyklus absolvieren kann.
+> Lade den Akku deshalb regelmäßig vollständig (100 %), damit das BMS einen vollständigen Ladezyklus absolvieren kann.  
 > 
 > **Nutzung auf eigene Gefahr**  
-> 
-> Dieses Add‑on wird ohne jede Gewähr bereitgestellt. Der Autor übernimmt **keinerlei Haftung** für Sach‑, Personen‑ oder Folgeschäden, die durch Installation, Konfiguration oder Betrieb entstehen.
+> Dieses Add-on wird ohne jede Gewähr bereitgestellt. Der Autor übernimmt **keinerlei Haftung** für Sach-, Personen- oder Folgeschäden, die durch Installation, Konfiguration oder Betrieb entstehen.
