@@ -1,0 +1,211 @@
+##############################################################################
+# AlphaESS SoC-Ladebegrenzung – mit intelligenter Zeitprüfung und Entladeschutz
+##############################################################################
+
+input_number:
+  alphaess_helper_soc_limit:
+    name: AlphaESS SoC-Grenze
+    min: 50
+    max: 100
+    step: 1
+    unit_of_measurement: "%"
+    mode: slider
+    icon: mdi:battery-charging-80
+
+input_boolean:
+  alphaess_helper_soc_limit_enable:
+    name: AlphaESS Export freigeben
+    icon: mdi:power-plug
+    initial: off
+
+  alphaess_excess_export_status:
+    name: Ladebremse aktiv (DM2)
+    icon: mdi:export
+    initial: off
+
+input_datetime:
+  alphaess_last_dm2_timestamp:
+    name: Letzter DM2-Schreibzeitpunkt
+    has_date: true
+    has_time: true
+
+template:
+  - sensor:
+      - name: "Batteriemodus"
+        unique_id: alphaess_dispatch_mode_translation_soc
+        state: >
+          {% set mode = states('sensor.alphaess_dispatch_mode') | int %}
+          {% if mode == 0 %}
+            Laden/Entladen freigegeben (DM0)
+          {% elif mode == 2 %}
+            Ladebremse aktiv (DM2)
+          {% else %}
+            Unbekannt ({{ mode }})
+          {% endif %}
+
+automation:
+  - id: alphaess_limit_battery_soc
+    alias: Batterie Einspeisung limitieren (DM2 bei SoC > Limit)
+    description: Aktiviert oder verlängert Ladebremse bei PV-Überschuss
+    mode: single
+    max_exceeded: silent
+
+    trigger:
+      - platform: time_pattern
+        seconds: "/10"
+
+    condition:
+      - condition: state
+        entity_id: input_boolean.alphaess_helper_soc_limit_enable
+        state: "on"
+
+      - condition: template
+        value_template: >
+          {% set pv = states('sensor.alphaess_current_pv_production') | float(0) %}
+          {% set load = states('sensor.alphaess_current_house_load') | float(0) %}
+          {{ pv > load }}
+
+      - condition: numeric_state
+        entity_id: sensor.alphaess_soc_battery
+        above: input_number.alphaess_helper_soc_limit
+
+      - condition: numeric_state
+        entity_id: sensor.alphaess_current_pv_production
+        above: 0
+
+    action:
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: >
+                  {% set mode = states('sensor.alphaess_dispatch_mode') | int %}
+                  {% set last = states('input_datetime.alphaess_last_dm2_timestamp') %}
+                  {% if mode != 2 %}
+                    true
+                  {% elif last != 'unknown' %}
+                    {% set parsed = strptime(last, '%Y-%m-%d %H:%M:%S') %}
+                    {% set diff = (now().replace(tzinfo=None) - parsed).total_seconds() %}
+                    {{ diff > 7100 }}
+                  {% else %}
+                    true
+                  {% endif %}
+            sequence:
+              - service: input_boolean.turn_on
+                target:
+                  entity_id: input_boolean.alphaess_excess_export_status
+
+              - service: input_datetime.set_datetime
+                data:
+                  entity_id: input_datetime.alphaess_last_dm2_timestamp
+                  timestamp: "{{ now().timestamp() }}"
+
+              - service: modbus.write_register
+                data:
+                  hub: modbuspvsystem
+                  slave: 85
+                  address: 2176
+                  value: [1]
+
+              - service: modbus.write_register
+                data:
+                  hub: modbuspvsystem
+                  slave: 85
+                  address: 2177
+                  value: [0, 32000]
+
+              - service: modbus.write_register
+                data:
+                  hub: modbuspvsystem
+                  slave: 85
+                  address: 2182
+                  value: [250]
+
+              - service: modbus.write_register
+                data:
+                  hub: modbuspvsystem
+                  slave: 85
+                  address: 2183
+                  value: [0, 7200]
+
+              - service: modbus.write_register
+                data:
+                  hub: modbuspvsystem
+                  slave: 85
+                  address: 2181
+                  value: [2]
+
+  - id: alphaess_reset_dispatch_mode
+    alias: Batterie Begrenzung zurücksetzen (DM0 bei SoC < Limit oder PV < Verbrauch)
+    description: Hebt Ladebremse auf, wenn SoC unter Limit fällt oder Batterie gebraucht wird
+    mode: single
+    max_exceeded: silent
+
+    trigger:
+      - platform: numeric_state
+        entity_id: sensor.alphaess_soc_battery
+        below: input_number.alphaess_helper_soc_limit
+        for:
+          seconds: 5
+
+      - platform: template
+        value_template: >
+          {% set pv = states('sensor.alphaess_current_pv_production') | float(0) %}
+          {% set load = states('sensor.alphaess_current_house_load') | float(0) %}
+          {{ pv < load }}
+
+      - platform: time_pattern
+        seconds: "/3"
+
+    condition:
+      - condition: state
+        entity_id: input_boolean.alphaess_helper_soc_limit_enable
+        state: "on"
+
+      - condition: template
+        value_template: >
+          {% set soc = states('sensor.alphaess_soc_battery') | float(0) %}
+          {% set soc_limit = states('input_number.alphaess_helper_soc_limit') | float(0) %}
+          {% set pv = states('sensor.alphaess_current_pv_production') | float(0) %}
+          {% set load = states('sensor.alphaess_current_house_load') | float(0) %}
+          {% set dispatch = states('sensor.alphaess_dispatch_mode') | int(0) %}
+          {{ dispatch == 2 and (soc < soc_limit or pv < load) }}
+
+    action:
+      - service: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.alphaess_excess_export_status
+
+      - service: modbus.write_register
+        data:
+          hub: modbuspvsystem
+          slave: 85
+          address: 2176
+          value: [1]
+
+      - service: modbus.write_register
+        data:
+          hub: modbuspvsystem
+          slave: 85
+          address: 2177
+          value: [0, 32000]
+
+      - service: modbus.write_register
+        data:
+          hub: modbuspvsystem
+          slave: 85
+          address: 2182
+          value: [250]
+
+      - service: modbus.write_register
+        data:
+          hub: modbuspvsystem
+          slave: 85
+          address: 2183
+          value: [0, 60]
+
+      - service: modbus.write_register
+        data:
+          hub: modbuspvsystem
+          slave: 85
+          address: 2181
+          value: [0]
